@@ -1,4 +1,4 @@
-# Empirical Analysis of Cryptocurrency Market Dynamics
+# Analysis of Cryptocurrency Market Dynamics
 
 This repository contains the source code, data, and report for a Python-based analysis of Bitcoin (BTC) and Ethereum (ETH) market dynamics. The project was completed for a course assignment and is documented in an IEEE-style technical report (`main.tex` / compiled `Project_1.pdf`).
 

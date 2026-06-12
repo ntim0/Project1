@@ -1,0 +1,252 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{tikz}
+
+\begin{document}
+
+\title{Analysis of Cryptocurrency Market Dynamics: \\
+Price Trends, Volatility Clustering, and Cross-Asset Correlations}
+
+\author{
+\IEEEauthorblockN{Christopher Ntim}
+\IEEEauthorblockA{
+Department of Computer Science \\
+Kean \\
+Email: ntimc@kean.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+The cryptocurrency market has evolved into one of the most volatile segments of global finance, with assets such as Bitcoin (BTC) and Ethereum (ETH) frequently experiencing double-digit percentage price moves within a single day. This volatility has practical implications for risk management, portfolio construction, and the design of algorithmic trading strategies. Building on an initial project proposal, this study implements a Python-based empirical analysis of two major cryptocurrencies, focusing on three core questions: (i) how price trends and trading volumes evolve across different time horizons for BTC and ETH, (ii) how volatility clusters over time and how its magnitude compares across assets, and (iii) what correlations exist between BTC and ETH, with particular attention to whether these relationships change during high-volatility market regimes. Daily OHLCV data for BTC and ETH against USD are downloaded as CSV files from CryptoDataDownload's Binance spot datasets and processed using the \texttt{pandas} and \texttt{NumPy} libraries. The analysis includes summary statistics, rolling measures of trend and dispersion, identification of extreme price events, moving-average crossover signals, and a correlation study based on both static and rolling Pearson coefficients. The results qualitatively confirm the presence of volatility clustering, strong positive correlation between BTC and ETH, and regime-dependent co-movement patterns. The study concludes by discussing practical implications for traders and risk managers and outlines several directions for future work.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Cryptocurrency, Bitcoin, Ethereum, volatility clustering, correlation, risk management, Python, time series.
+\end{IEEEkeywords}
+
+\section{Introduction}
+The cryptocurrency market has grown into one of the most volatile ecosystems in modern finance. Assets such as Bitcoin (BTC) and Ethereum (ETH) regularly exhibit daily price swings exceeding 10\%, driven by macroeconomic news, regulatory announcements, and endogenous market dynamics. This behavior has important consequences for risk management, portfolio allocation, and the design of systematic trading strategies, motivating rigorous empirical analysis of cryptocurrency price dynamics.
+
+The present work is based on a prior project proposal that articulated three main research questions: (1) how price trends and trading volumes evolve across different time horizons for BTC and ETH, (2) how volatility clusters over time and how it compares across assets, and (3) what correlations exist between BTC and ETH, especially under high-volatility market regimes. The proposal also specified a set of visualizations, including price charts with moving averages, rolling volatility plots, correlation heatmaps, and scatter plots relating returns and trading volume.
+
+The objective of this study is to implement that plan in Python and to report the resulting numerical findings in a structured, IEEE-style technical report. The analysis relies on historical OHLCV (open, high, low, close, volume) data for BTC and ETH versus USD. For each asset, daily log-returns, moving averages, volatility measures, and correlation statistics are computed. The numerical results are presented through a series of figures and tables that mirror the proposed visualizations.
+
+The remainder of this paper is organized as follows. Section~\ref{sec:background} summarizes related work on cryptocurrency volatility and correlations. Section~\ref{sec:data_method} describes the data sources and methodology, including the computation of returns, moving averages, and volatility metrics. Section~\ref{sec:implementation} details the Python implementation and project structure. Section~\ref{sec:results} presents the numerical results, organized around the three research questions. Section~\ref{sec:conclusion} concludes and discusses possible extensions.
+
+\section{Background and Related Work}
+\label{sec:background}
+Since the inception of Bitcoin in 2009, a large body of research has emerged comparing the risk and return characteristics of cryptocurrencies with traditional asset classes such as equities, commodities, and foreign exchange. Prior work has documented that cryptocurrencies generally exhibit higher volatility and heavier tails than most conventional assets, implying a greater frequency of extreme returns events. In addition, several studies have examined correlations among major cryptocurrencies and between cryptocurrencies and traditional markets, often finding that correlations increase during market stress periods.
+
+From a practical standpoint, both institutional and retail investors rely heavily on market data platforms and APIs such as CoinMarketCap and CryptoCompare for real-time prices, historical OHLCV series, and derivative metrics such as market capitalization and trading volume \cite{coinmarketcapAPI,cryptocompareAPI}. These data sources enable systematic empirical research and backtesting of trading strategies. Industry-oriented articles from exchanges and data providers further offer guidance on evaluating cryptocurrency projects, analyzing tokenomics, and assessing market structure \cite{fidelityEvaluation,nbxEvaluation}. 
+
+The present study does not attempt to contribute new econometric models or statistical tests. Instead, it focuses on implementing a comprehensive, reproducible empirical workflow in Python that computes and visualizes key descriptive statistics for BTC and ETH. The emphasis is on practical insights into price trends, volatility clustering, and cross-asset correlations over several years of daily data.
+
+\section{Data and Methodology}
+\label{sec:data_method}
+
+\subsection{Data Sources}
+The analysis uses daily OHLCV data for two major cryptocurrencies: BTC and ETH, each quoted in USD. Historical data are downloaded as CSV files from CryptoDataDownload's Binance spot datasets for the BTC/USDT and ETH/USDT trading pairs.\cite{cryptodatadownload} Each file contains daily timestamps and the corresponding open, high, low, and close prices, as well as traded volume in units of the base asset and in USD. The raw CSV files are imported into \texttt{pandas} DataFrames and stored in cleaned form to support reproducibility and offline analysis.
+
+For visualization, figures typically plot observations against an integer time index (0 for the first available date) on the horizontal axis, while the underlying series are daily calendar dates. This convention avoids plotting issues related to date conversions while preserving the temporal order of observations.
+
+\subsection{Preprocessing and Returns}
+For an asset with daily closing price series \(P_t\), the analysis uses log-returns defined as
+\[
+r_t = \ln\left(\frac{P_t}{P_{t-1}}\right),
+\]
+where \(t\) indexes trading days. Log-returns are preferred for their additive properties over time and their common use in financial time series analysis.
+
+Missing data, if any, are handled by inner joins on trading days common to both assets or by forward-filling when appropriate for visualization. Outliers arising from obvious data errors are not manually edited; instead, the analysis focuses on observed extreme returns that may correspond to genuine market events.
+
+\subsection{Trend and Moving Averages}
+To capture medium- and long-term price trends, the study computes simple moving averages (SMAs) over 50-day and 200-day windows for BTC:
+\[
+\text{SMA}_{50}(t) = \frac{1}{50} \sum_{i=0}^{49} P_{t-i}, \quad
+\text{SMA}_{200}(t) = \frac{1}{200} \sum_{i=0}^{199} P_{t-i}.
+\]
+The interaction between these two moving averages is often used in technical analysis to identify bullish and bearish regimes. For example, a ``golden cross'' occurs when the short-term average rises above the long-term average, whereas a ``death cross'' corresponds to the opposite configuration.
+
+\subsection{Volatility Measures}
+Daily volatility is summarized using the standard deviation of log-returns over a rolling 30-day window. To facilitate interpretation, the study reports annualized rolling volatility:
+\[
+\sigma_{30}(t) = \sqrt{365} \cdot \operatorname{std}\left(r_{t-29}, \dots, r_t\right),
+\]
+where the factor \(\sqrt{365}\) assumes 365 calendar days per year. This measure enables comparison between BTC and ETH to assess relative risk.
+
+Extreme events are identified by ranking daily log-returns and selecting the most negative and most positive days for BTC. These events are then aligned with known market episodes, such as major crashes, rallies, and structural changes like the 2024 halving.
+
+\subsection{Correlation Analysis}
+Static correlations between BTC and ETH are measured using the Pearson correlation coefficient between daily log-returns. For assets \(i\) and \(j\), the correlation is defined as
+\[
+\rho_{ij} = \frac{\operatorname{cov}(r^{(i)}, r^{(j)})}
+{\sigma_i \sigma_j},
+\]
+where \(\sigma_i\) and \(\sigma_j\) are the standard deviations of the respective return series. The \(2 \times 2\) correlation matrix for BTC and ETH is visualized as a heatmap.
+
+To capture the time-varying nature of co-movement, a 90-day rolling correlation between BTC and ETH is computed:
+\[
+\rho_{BTC,ETH}(t) =
+\operatorname{corr}\left(
+r^{BTC}_{t-89}, \dots, r^{BTC}_t;
+r^{ETH}_{t-89}, \dots, r^{ETH}_t
+\right).
+\]
+This rolling coefficient allows the analysis to examine whether BTC--ETH correlation intensifies during high-volatility regimes.
+
+\section{Implementation in Python}
+\label{sec:implementation}
+The project is implemented in a single Python script, \texttt{crypto\_analysis.py}, to align with the course requirements. The core dependencies are \texttt{pandas} for data manipulation, \texttt{NumPy} for numerical computations, \texttt{matplotlib} for visualization, and \texttt{SciPy} for fitting the normal distribution to log-returns. The script reads historical OHLCV data for BTC and ETH from local CSV files obtained from CryptoDataDownload's Binance BTC/USDT and ETH/USDT datasets, computes log-returns, moving averages, rolling volatility, correlations, and extreme-event statistics, and then generates the figures referenced in this report.
+
+The GitHub repository accompanying this report contains the source script, configuration parameters (such as the date range), and instructions for reproducing the results.
+
+\section{Numerical Results}
+\label{sec:results}
+This section summarizes the main empirical findings, organized according to the three research questions and the visualization plan.
+
+\subsection{Summary Statistics and Extreme Events}
+Table~\ref{tab:summary_stats} reports descriptive statistics for BTC and ETH daily log-returns over the sample period, including mean, median, standard deviation, and the minimum and maximum observed returns.\cite{returnstats} As expected for highly volatile assets, the standard deviation of daily returns is materially higher than typical values for large-cap equities, and both assets exhibit pronounced skewness and kurtosis.
+
+\begin{table}[!t]
+\centering
+\caption{Summary statistics for BTC and ETH daily log-returns.}
+\label{tab:summary_stats}
+\begin{tabular}{lcc}
+\toprule
+Statistic & BTC & ETH \\
+\midrule
+Mean      & 0.0008 & 0.0005 \\
+Median    & 0.0006 & 0.0006 \\
+Std. Dev. & 0.0359 & 0.0464 \\
+Min       & -0.5026 & -0.5905 \\
+Max       & 0.2030 & 0.2338 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To highlight extreme events, the analysis extracts the ten most negative and ten most positive daily log-returns for BTC. These dates align with major market episodes, including sharp sell-offs and rapid recoveries. The corresponding CSV file of extreme events is produced by the Python code, and the events can be cross-referenced with external news timelines for further qualitative interpretation.
+
+\subsection{Price Trends and Moving Averages}
+Figure~\ref{fig:btc_candles} displays a BTC/USD price chart with 50-day and 200-day simple moving averages overlaid. The shorter moving average reacts more quickly to price changes, while the longer moving average smooths across regimes. Instances where the 50-day SMA rises above the 200-day SMA visually coincide with sustained uptrends, whereas crossings in the opposite direction are associated with extended periods of weakness.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{btc_candlestick_sma.png}
+\caption{BTC/USD daily close with 50-day and 200-day simple moving averages (time index on x-axis).}
+\label{fig:btc_candles}
+\end{figure}
+
+To compare performance across assets, normalized price indices are constructed by setting each asset's initial value to 100 and plotting the resulting series against a time index. Figure~\ref{fig:normalized_prices} illustrates these normalized trajectories for BTC and ETH. This visualization allows direct comparison of cumulative returns, highlighting periods during which ETH temporarily outperforms BTC before mean-reverting or entering drawdowns.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{normalized_prices.png}
+\caption{Normalized daily prices (index = 100 at start) for BTC and ETH (time index on x-axis).}
+\label{fig:normalized_prices}
+\end{figure}
+
+\subsection{Volatility Clustering}
+Rolling annualized 30-day volatility for BTC and ETH is shown in Figure~\ref{fig:rolling_vol}. Both series exhibit clear volatility clustering: periods of elevated volatility persist for weeks or months, followed by quieter intervals. Peaks in volatility correspond to major market stress events, such as sharp drawdowns and macroeconomic shocks.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{rolling_volatility.png}
+\caption{Rolling 30-day annualized volatility for BTC and ETH daily log-returns (time index on x-axis).}
+\label{fig:rolling_vol}
+\end{figure}
+
+Consistent with the initial expectations, ETH tends to exhibit higher volatility than BTC in many episodes, reflecting its role as a higher-beta asset within the cryptocurrency ecosystem. However, the spread between BTC and ETH volatility is time-varying and occasionally narrows during calmer regimes. These patterns support the notion that volatility in cryptocurrency markets can be both asset-specific and regime-dependent.
+
+\subsection{Distribution of Returns}
+Figure~\ref{fig:btc_hist} provides a histogram of BTC daily log-returns, overlaid with the probability density function of a normal distribution calibrated to the empirical mean and standard deviation. The empirical distribution displays heavier tails than the fitted normal curve, indicating a higher frequency of extreme price movements than would be expected under a Gaussian assumption.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{btc_return_hist_kde.png}
+\caption{Distribution of BTC daily log-returns with fitted normal density.}
+\label{fig:btc_hist}
+\end{figure}
+
+This heavy-tailed behavior is consistent with prior findings in both cryptocurrency and traditional financial markets. From a risk management perspective, it suggests that models assuming normally distributed returns may underestimate the likelihood of large losses and gains.
+
+\subsection{Trading Volume and Price Dynamics}
+To analyze how trading activity evolves over time, the study computes monthly average BTC trading volume in USD and presents the results in Figure~\ref{fig:btc_volume}. The chart reveals distinct regimes of market participation, with surges in average volume during bull markets and contractions during prolonged bear phases.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{btc_monthly_volume.png}
+\caption{Monthly average BTC daily trading volume in USD (month index on x-axis).}
+\label{fig:btc_volume}
+\end{figure}
+
+The relationship between volatility and trading activity is further explored via a scatter plot of 30-day rolling volatility against daily trading volume for BTC. Figure~\ref{fig:btc_vol_volume} suggests a positive association between volatility and volume: days with higher realized volatility tend to coincide with elevated trading activity. This observation aligns with microstructure theories linking information arrival to both price variability and trading volume.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{btc_vol_vs_volume.png}
+\caption{Scatter plot of BTC 30-day rolling volatility versus daily trading volume in USD.}
+\label{fig:btc_vol_volume}
+\end{figure}
+
+\subsection{Cross-Asset Correlations}
+The Pearson correlation matrix of daily log-returns for BTC and ETH is shown as a heatmap in Figure~\ref{fig:heatmap}. The matrix indicates that BTC and ETH are strongly positively correlated over the sample period.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{return_correlation_heatmap.png}
+\caption{Correlation heatmap of daily log-returns for BTC and ETH.}
+\label{fig:heatmap}
+\end{figure}
+
+To explore the time variation in correlations, Figure~\ref{fig:rolling_corr} plots the 90-day rolling correlation between BTC and ETH daily log-returns, using a time index on the horizontal axis. The series fluctuates over time but tends to rise toward one during periods of market stress, indicating that diversification benefits between BTC and ETH are limited when they are most needed.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\linewidth]{btc_eth_rolling_corr.png}
+\caption{Ninety-day rolling Pearson correlation between BTC and ETH daily log-returns (time index on x-axis).}
+\label{fig:rolling_corr}
+\end{figure}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+This study implemented a Python-based empirical analysis of BTC and ETH, following a project plan centered on price trends, volatility clustering, and cross-asset correlations. Using daily OHLCV data for BTC and ETH, the analysis produced a range of visualizations, including price charts with moving averages, normalized price trajectories, rolling volatility plots, a correlation heatmap, and scatter plots linking volatility and trading volume.
+
+The numerical results qualitatively confirm several expected properties of cryptocurrency markets. First, both BTC and ETH exhibit high volatility and heavy-tailed return distributions, with clear evidence of volatility clustering. Second, BTC and ETH display strong positive correlation, especially during high-volatility episodes, which limits diversification benefits between the two assets. Third, trading volume tends to increase during volatile periods, suggesting a link between market activity and price variability.
+
+Several avenues for future work emerge from this project. One extension would be to incorporate intraday data (e.g., hourly or minute-level OHLCV) to study microstructure effects and short-term volatility dynamics. Another would be to apply more advanced econometric models, such as GARCH-type specifications, to formally quantify volatility clustering and forecast volatility. Finally, integrating on-chain metrics or order book data could provide a richer view of market structure and liquidity.
+
+
+\begin{thebibliography}{00}
+
+\bibitem{coinmarketcapAPI}
+CoinMarketCap, ``The World's Number 1 Cryptocurrency Market Data API,'' accessed Jun. 2026. [Online]. Available: \url{https://coinmarketcap.com/api/}
+
+\bibitem{cryptocompareAPI}
+CryptoCompare, ``CryptoCompare API Integration --- Historical and Real-Time Cryptocurrency Data,'' accessed Jun. 2026. [Online]. Available: \url{https://truetech.dev/blockchain-development/services/blockchain-infrastructure/cryptocompare-api-integration.html}
+
+\bibitem{cryptocompareOpenAPI}
+Open Public APIs, ``CryptoCompare --- Free Public APIs for Developers,'' accessed Jun. 2026. [Online]. Available: \url{https://openpublicapis.com/api/cryptocompare}
+
+\bibitem{fidelityEvaluation}
+Fidelity Investments, ``How to Evaluate a Cryptocurrency,'' accessed Jun. 2026. [Online]. Available: \url{https://www.fidelity.com/learning-center/trading-investing/crypto/evaluate-cryptocurrencies}
+
+\bibitem{nbxEvaluation}
+Norwegian Block Exchange (NBX), ``How to Evaluate Cryptocurrency Projects,'' accessed Jun. 2026. [Online]. Available: \url{https://nbx.com/blog-en/how-to-evaluate-cryptocurrency-projects}
+
+\bibitem{bryantCrypto}
+Bryant University, ``Cryptocurrency in Investing: An Analysis of Digital Currencies and \ldots,'' Honors Finance Thesis, 2024. [Online]. Available: \url{https://digitalcommons.bryant.edu/cgi/viewcontent.cgi?article=1068&context=honors_finance}
+
+\bibitem{cryptodatadownload}
+Crypto Data Download, ``Historical Cryptocurrency Data,'' accessed Jun. 2026. [Online]. Available: \url{https://www.cryptodatadownload.com}
+
+\bibitem{returnstats}
+Project code output, ``return\_summary\_stats.csv,'' generated Jun. 2026.
+
+\end{thebibliography}
+
+\end{document}
